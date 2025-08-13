@@ -1,7 +1,7 @@
 <h1 align="center">AI Prompt Trace</h1>
-<p align="center"><i>Your cyberpunk co-pilot for navigating and managing prompt history on Gemini</i></p>
 <div align="center">
-  <img width="50" height="50" alt="image" src="https://github.com/user-attachments/assets/c239a32f-847f-4799-be5e-34b6244884fa" />
+  <img width="100" height="100" alt="image" src="https://github.com/user-attachments/assets/c239a32f-847f-4799-be5e-34b6244884fa" />
+  <p align="center"><i>Your cyberpunk co-pilot for navigating and managing prompt history on Gemini</i></p>
 </div>
 
 <p align="center">
