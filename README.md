@@ -1,15 +1,16 @@
-<h1 align="center"\>🚀 Gemini Prompt Navigator</h1\>
-<p align="center"\>\<i\>Your cyberpunk co-pilot for navigating and managing Gemini prompt history.</i\></p\>
-<p align="center"\>
-<img src="[https://img.shields.io/badge/status-stable-green](https://www.google.com/search?q=https://img.shields.io/badge/status-stable-green)" alt="Project Status Badge"/\>
-<img src="[https://img.shields.io/badge/API-Chrome%20Extension%20APIs-blueviolet](https://www.google.com/search?q=https://img.shields.io/badge/API-Chrome%2520Extension%2520APIs-blueviolet)" alt="API Badge"/\>
-</p\>
-<h3 align="center"\>\<i\>Built with the tools and technologies:</i></h3\>
-<p align="center"\>
-<img src="[https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript\&logoColor=black](https://www.google.com/search?q=https://img.shields.io/badge/-JavaScript-F7DF1E%3Flogo%3Djavascript%26logoColor%3Dblack)" alt="JavaScript"/\>
-<img src="[https://img.shields.io/badge/-CSS3-1572B6?logo=css3\&logoColor=white](https://www.google.com/search?q=https://img.shields.io/badge/-CSS3-1572B6%3Flogo%3Dcss3%26logoColor%3Dwhite)" alt="CSS3"/\>
-<img src="[https://img.shields.io/badge/-HTML5-E34F26?logo=html5\&logoColor=white](https://www.google.com/search?q=https://img.shields.io/badge/-HTML5-E34F26%3Flogo%3Dhtml5%26logoColor%3Dwhite)" alt="HTML5"/\>
-</p\>
+<h1 align="center">AI Prompt Trace</h1>
+<p align="center"><i>Your cyberpunk co-pilot for navigating and managing prompt history on Gemini</i></p>
+<p align="center">
+  <img src="https://img.shields.io/badge/status-in--progress-yellow" alt="Project Status Badge"/>
+  <img src="https://img.shields.io/badge/API-Chrome%20Extension%20APIs-lightgrey" alt="API Badge"/>
+</p>
+<h3 align="center"><i>Built with the tools and technologies:</i></h3>
+<p align="center">
+  <img src="https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript&logoColor=black" alt="JavaScript"/>
+  <img src="https://img.shields.io/badge/-CSS3-1572B6?logo=css3&logoColor=white" alt="CSS3"/>
+  <img src="https://img.shields.io/badge/-HTML5-E34F26?logo=html5&logoColor=white" alt="HTML5"/>
+  <img src="https://img.shields.io/badge/-Chrome_APIs-4285F4?logo=google-chrome&logoColor=white" alt="Chrome APIs"/>
+</p>
 
 -----
 
@@ -27,7 +28,7 @@
 
 ## 📌 Overview
 
-**Gemini Prompt Navigator** is a sleek, powerful browser extension designed to enhance the user experience on the Gemini website. As conversations with Gemini grow longer, navigating through the history of prompts becomes cumbersome. This extension solves that problem by injecting a futuristic, cyberpunk-themed sidebar that automatically detects and lists every prompt in your current session. With features like one-click navigation and live filtering, it transforms a long, scrolling chat into a well-organized, easily accessible archive.
+**Prompt Navigator** is a sleek, powerful browser extension designed to enhance the user experience on the Gemini website. As conversations with Gemini grow longer, navigating through the history of prompts becomes cumbersome. This extension solves that problem by injecting a futuristic, cyberpunk-themed sidebar that automatically detects and lists every prompt in your current session. With features like one-click navigation and live filtering, it transforms a long, scrolling chat into a well-organized, easily accessible archive.
 
 -----
 
