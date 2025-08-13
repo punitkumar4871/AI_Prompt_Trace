@@ -1,10 +1,10 @@
-<h1 align="center"\>🚀 Gemini Prompt Navigator\</h1\>
-<p align="center"\>\<i\>Your cyberpunk co-pilot for navigating and managing Gemini prompt history.\</i\>\</p\>
+<h1 align="center"\>🚀 Gemini Prompt Navigator</h1\>
+<p align="center"\>\<i\>Your cyberpunk co-pilot for navigating and managing Gemini prompt history.</i\></p\>
 <p align="center"\>
 <img src="[https://img.shields.io/badge/status-stable-green](https://www.google.com/search?q=https://img.shields.io/badge/status-stable-green)" alt="Project Status Badge"/\>
 <img src="[https://img.shields.io/badge/API-Chrome%20Extension%20APIs-blueviolet](https://www.google.com/search?q=https://img.shields.io/badge/API-Chrome%2520Extension%2520APIs-blueviolet)" alt="API Badge"/\>
 </p\>
-<h3 align="center"\>\<i\>Built with the tools and technologies:\</i\>\</h3\>
+<h3 align="center"\>\<i\>Built with the tools and technologies:</i></h3\>
 <p align="center"\>
 <img src="[https://img.shields.io/badge/-JavaScript-F7DF1E?logo=javascript\&logoColor=black](https://www.google.com/search?q=https://img.shields.io/badge/-JavaScript-F7DF1E%3Flogo%3Djavascript%26logoColor%3Dblack)" alt="JavaScript"/\>
 <img src="[https://img.shields.io/badge/-CSS3-1572B6?logo=css3\&logoColor=white](https://www.google.com/search?q=https://img.shields.io/badge/-CSS3-1572B6%3Flogo%3Dcss3%26logoColor%3Dwhite)" alt="CSS3"/\>
