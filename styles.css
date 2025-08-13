@@ -8,9 +8,9 @@
     background: 
         radial-gradient(circle at 15% 25%, rgba(0, 242, 255, 0.1) 0%, transparent 40%),
         radial-gradient(circle at 85% 75%, rgba(255, 0, 255, 0.08) 0%, transparent 40%),
-        #01020d; 
+        #01020d;
     border-left: 1px solid rgba(0, 242, 255, 0.3);
-    z-index: 10000;
+    z-index: 2147483647; 
     transition: right 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: flex;
     flex-direction: column;
@@ -71,7 +71,7 @@
 #prompt-list li {
     padding: 15px 28px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.75);
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
     position: relative;
     border-left: 3px solid transparent;
@@ -79,7 +79,7 @@
     letter-spacing: 0.4px;
     display: flex;
     align-items: center;
-    gap: 15px; 
+    gap: 15px;
 }
 
 .prompt-item-content {
@@ -88,6 +88,7 @@
     flex-grow: 1;
     gap: 5px;
     font-size: 12px;
+    word-break: break-word;
 }
 
 #prompt-list li:hover {
@@ -103,21 +104,16 @@
     cursor: pointer;
     transition: transform 0.3s ease;
 }
-.image-indicator:hover {
-    transform: scale(1.2);
-}
+.image-indicator:hover { transform: scale(1.2); }
 
-/* --- Image Modal Styling --- */
 #gemini-image-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
-    z-index: 10002;
-    display: none; /* Hidden by default */
+    z-index: 2147483647;
+    display: none;
     align-items: center;
     justify-content: center;
     padding: 40px;
@@ -139,12 +135,8 @@
     cursor: pointer;
     transition: color 0.3s ease;
 }
+#modal-close-button:hover { color: #ff00ff; }
 
-#modal-close-button:hover {
-    color: #ff00ff;
-}
-
-/* --- Cyberpunk Toggle Button --- */
 #gemini-prompt-nav-toggle {
     position: fixed;
     top: 50%;
@@ -157,32 +149,28 @@
     color: #00f2ff;
     border-radius: 50%;
     cursor: pointer;
-    z-index: 10001;
+    z-index: 2147483646;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
     backdrop-filter: blur(12px);
 }
-
 #gemini-prompt-nav-toggle:hover {
     border-color: #ff00ff;
     color: #ff00ff;
     box-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
 }
+body.sidebar-open #gemini-prompt-nav-toggle { right: 392px; }
 
-body.sidebar-open #gemini-prompt-nav-toggle {
-    right: 392px;
-}
-
-/* Highlight for user-query elements */
-user-query.highlight {
+user-query.highlight,
+[data-testid="conversation-turn-user"].highlight,
+[data-message-author-role="user"].highlight {
     background: linear-gradient(90deg, rgba(0, 242, 255, 0.15) 0%, rgba(255, 0, 255, 0.15) 100%) !important;
     border-radius: 8px;
     display: block;
 }
 
-/* --- Popup Styles --- */
 .popup-container {
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     width: 340px;
@@ -192,13 +180,7 @@ user-query.highlight {
     overflow: hidden;
     backdrop-filter: blur(12px);
 }
-
-.popup-header {
-    padding: 32px 28px 20px;
-    text-align: center;
-    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
-}
-
+.popup-header { padding: 32px 28px 20px; text-align: center; border-bottom: 1px solid rgba(0, 242, 255, 0.2); }
 .popup-header h1 {
     margin: 0;
     font-size: 16px;
@@ -208,18 +190,29 @@ user-query.highlight {
     text-transform: uppercase;
     text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
 }
-
-.popup-content {
-    padding: 24px 28px 32px;
-    text-align: center;
-}
-
+.popup-content { padding: 24px 28px 32px; text-align: center; }
 .popup-content p {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.7);
     line-height: 1.8;
     margin: 0 0 24px 0;
     font-weight: 300;
+}
+.prompt-date {
+    font-size: 10px;
+    color: rgba(200, 200, 200, 0.5);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.prompt-item-content {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 4px; 
+    font-size: 12px;
+    word-break: break-word;
 }
 
 .status-indicator {
@@ -232,7 +225,6 @@ user-query.highlight {
     letter-spacing: 2px;
     text-transform: uppercase;
 }
-
 .status-dot {
     width: 8px;
     height: 8px;
@@ -241,7 +233,6 @@ user-query.highlight {
     box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
     animation: pulse-dot 2s infinite ease-in-out;
 }
-
 @keyframes pulse-dot {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.8); }

@@ -1,13 +1,15 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "saveSidebarState") {
-    chrome.storage.local.set({ sidebarOpen: request.isOpen });
-    return; 
+    const key = `sidebarOpen:${request.site || "default"}`;
+    chrome.storage.local.set({ [key]: request.isOpen });
+    return;
   }
 
   if (request.action === "getSidebarState") {
     (async () => {
-      const result = await chrome.storage.local.get(['sidebarOpen']);
-      sendResponse({ sidebarOpen: result.sidebarOpen });
+      const key = `sidebarOpen:${request.site || "default"}`;
+      const result = await chrome.storage.local.get([key]);
+      sendResponse({ sidebarOpen: result[key] });
     })();
     return true;
   }
