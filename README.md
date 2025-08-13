@@ -1,5 +1,6 @@
 <h1 align="center">AI Prompt Trace</h1>
 <p align="center"><i>Your cyberpunk co-pilot for navigating and managing prompt history on Gemini</i></p>
+<img width="50" height="50" alt="image" src="https://github.com/user-attachments/assets/c239a32f-847f-4799-be5e-34b6244884fa" />
 <p align="center">
   <img src="https://img.shields.io/badge/status-in--progress-yellow" alt="Project Status Badge"/>
   <img src="https://img.shields.io/badge/API-Chrome%20Extension%20APIs-lightgrey" alt="API Badge"/>
