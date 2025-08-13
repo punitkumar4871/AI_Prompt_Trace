@@ -1,36 +1,105 @@
+/* --- Cyberpunk Interface Theme --- */
+
+/* --- Foundational Styles --- */
 #gemini-prompt-nav-sidebar {
     position: fixed;
     top: 0;
-    right: -300px; 
-    left: auto; 
-    width: 300px;
+    right: -380px;
+    width: 380px;
     height: 100vh;
-    background-color: #f0f4f9; 
-    border-left: 1px solid #dcdcdc;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    background: 
+        radial-gradient(circle at 15% 25%, rgba(0, 242, 255, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 85% 75%, rgba(255, 0, 255, 0.08) 0%, transparent 40%),
+        #01020d; /* Deep space blue base */
+    border-left: 1px solid rgba(0, 242, 255, 0.3);
     z-index: 10000;
-    transition: right 0.3s ease-in-out;
+    transition: right 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
     display: flex;
     flex-direction: column;
-    font-family: 'Google Sans', sans-serif;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    box-shadow: -10px 0 50px rgba(0, 0, 0, 0.5);
+}
+
+/* Static noise overlay */
+#gemini-prompt-nav-sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.02;
+    pointer-events: none;
+    animation: static-flicker 10s linear infinite;
+}
+
+@keyframes static-flicker {
+    0% { transform: translate(0,0); }
+    10% { transform: translate(-1%,1%); }
+    20% { transform: translate(1%,-1%); }
+    30% { transform: translate(-2%,2%); }
+    100% { transform: translate(0,0); }
 }
 
 #gemini-prompt-nav-sidebar.open {
     right: 0;
 }
 
+/* --- Header --- */
 #sidebar-header {
-    padding: 15px;
-    background-color: #e3eaf2;
-    border-bottom: 1px solid #dcdcdc;
+    padding: 35px 28px 24px;
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.05) 0%, rgba(255, 0, 255, 0.05) 100%);
+    position: relative;
+    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 #sidebar-header h2 {
-    margin: 0;
-    font-size: 18px;
-    color: #1f1f1f;
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: #00f2ff;
+    letter-spacing: 3px;
+    text-transform: uppercase;
 }
 
+#sidebar-stats {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+
+/* --- Search --- */
+#search-container {
+    padding: 20px 28px;
+    position: relative;
+}
+
+#search-input {
+    width: 100%;
+    padding: 12px 0;
+    border: none;
+    border-bottom: 1px solid rgba(0, 242, 255, 0.3);
+    background: transparent;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    outline: none;
+    font-family: inherit;
+    font-weight: 300;
+    transition: all 0.4s ease;
+}
+
+#search-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+#search-input:focus {
+    border-bottom-color: #00f2ff;
+    box-shadow: 0 2px 15px -5px rgba(0, 242, 255, 0.4);
+}
+
+/* --- Prompt List --- */
 #prompt-list {
     list-style: none;
     padding: 10px 0;
@@ -38,61 +107,148 @@
     overflow-y: auto;
     flex-grow: 1;
 }
+#prompt-list::-webkit-scrollbar { display: none; }
 
 #prompt-list li {
-    padding: 12px 15px;
+    padding: 15px 28px;
     cursor: pointer;
-    border-bottom: 1px solid #e0e0e0;
-    font-size: 14px;
-    color: #3c4043;
-    transition: background-color 0.2s ease;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    border-left: 3px solid transparent;
+    font-weight: 300;
+    letter-spacing: 0.4px;
 }
 
 #prompt-list li:hover {
-    background-color: #dce6f1;
+    color: #ffffff;
+    border-left-color: #ff00ff;
+    background: linear-gradient(90deg, rgba(255, 0, 255, 0.1) 0%, transparent 100%);
+    transform: translateX(10px);
+    text-shadow: 0 0 8px rgba(255, 0, 255, 0.3);
 }
 
-#prompt-list li:last-child {
-    border-bottom: none;
-}
-
-
+/* --- NEW: Cyberpunk Toggle Button --- */
 #gemini-prompt-nav-toggle {
     position: fixed;
     top: 50%;
-    right: 0; 
-    left: auto; 
+    right: 12px;
     transform: translateY(-50%);
-    width: 25px;
-    height: 50px;
-    background-color: #4285f4; 
-    color: white;
-    border: none;
-    border-top-left-radius: 8px;
-    border-bottom-left-radius: 8px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    width: 44px;
+    height: 44px;
+    background: #01020d;
+    border: 1px solid rgba(0, 242, 255, 0.5);
+    color: #00f2ff;
+    border-radius: 50%;
     cursor: pointer;
     z-index: 10001;
-    font-size: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: -1px 0 3px rgba(0,0,0,0.2);
-    transition: right 0.3s ease-in-out;
+    transition: all 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
+    backdrop-filter: blur(12px);
 }
 
-body.sidebar-open {
-    padding-right: 300px; 
-    padding-left: 0;
-    transition: padding-right 0.3s ease-in-out;
+#gemini-prompt-nav-toggle .toggle-icon {
+    transition: transform 0.5s ease;
+}
+
+#gemini-prompt-nav-toggle:hover {
+    border-color: #ff00ff;
+    color: #ff00ff;
+    box-shadow: 0 0 25px rgba(255, 0, 255, 0.4);
+    animation: glitch 0.3s linear infinite;
+}
+
+@keyframes glitch {
+  0% { transform: translateY(-50%) translate(0,0); }
+  25% { transform: translateY(-50%) translate(-2px, 2px); }
+  50% { transform: translateY(-50%) translate(2px, -2px); }
+  75% { transform: translateY(-50%) translate(-2px, 2px); }
+  100% { transform: translateY(-50%) translate(0,0); }
 }
 
 body.sidebar-open #gemini-prompt-nav-toggle {
-    right: 300px;
+    right: 392px;
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* --- Body and Highlight --- */
+body.sidebar-open {
+    padding-right: 380px;
+    transition: padding-right 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .highlight {
-    background-color: #fff4b3 !important; 
-    transition: background-color 0.5s ease;
+    background: linear-gradient(90deg, rgba(0, 242, 255, 0.15) 0%, rgba(255, 0, 255, 0.15) 100%) !important;
+    color: #ffffff !important;
+    border-left-color: #00f2ff !important;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+    transform: translateX(10px) scale(1.02);
+}
+
+/* --- Holographic Popup --- */
+.popup-container {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    width: 340px;
+    background: linear-gradient(135deg, rgba(0, 242, 255, 0.1) 0%, #01020d 50%, rgba(255, 0, 255, 0.1) 100%);
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    border-radius: 8px;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+}
+
+.popup-header {
+    padding: 32px 28px 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+}
+
+.popup-header h1 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 400;
+    color: #00f2ff;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
+}
+
+.popup-content {
+    padding: 24px 28px 32px;
+    text-align: center;
+}
+
+.popup-content p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.8;
+    margin: 0 0 24px 0;
+    font-weight: 300;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ff00ff;
+    box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
+    animation: pulse-dot 2s infinite ease-in-out;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
 }
