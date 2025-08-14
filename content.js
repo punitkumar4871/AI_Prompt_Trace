@@ -1,6 +1,5 @@
-console.log("Prompt Navigator content script loaded with date-only display.");
+console.log("Prompt Navigator All-in-One loaded.");
 
-// ---------- Site Detection ----------
 const Site = Object.freeze({
   GEMINI: "gemini",
   CHATGPT: "chatgpt",
@@ -12,17 +11,14 @@ function detectSite() {
   const h = location.hostname;
   if (h.includes("gemini.google.com")) return Site.GEMINI;
   if (h.includes("chat.openai.com") || h.includes("chatgpt.com")) return Site.CHATGPT;
-  if (h.includes("grok.com") || h.includes("x.ai")) return Site.GROK;
+  if (h.includes("grok.com")) return Site.GROK;
   return Site.UNKNOWN;
 }
 
 const ACTIVE_SITE = detectSite();
-document.body.dataset.site = ACTIVE_SITE;
-
 let sidebar, toggleButton, observer, debounceTimer, modal;
-let promptDates = {}; 
+let promptDates = {};
 
-// ---------- Utils ----------
 function debounce(func, delay) {
   return function (...args) {
     clearTimeout(debounceTimer);
@@ -32,24 +28,24 @@ function debounce(func, delay) {
 function formatDate(ts) {
   if (!ts) return "";
   const date = new Date(ts);
-  return date.toLocaleDateString(); 
+  return date.toLocaleDateString();
 }
 
 function createSidebar() {
-  if (document.getElementById("gemini-prompt-nav-sidebar")) return;
+  if (document.getElementById("prompt-navigator-sidebar")) return;
 
   sidebar = document.createElement("div");
-  sidebar.id = "gemini-prompt-nav-sidebar";
+  sidebar.id = "prompt-navigator-sidebar";
   sidebar.innerHTML = `
     <div id="sidebar-header">
-      <h2>${ACTIVE_SITE === Site.GEMINI ? "Gemini" : (ACTIVE_SITE === Site.CHATGPT?"ChatGPT":"Grok")} Prompt History</h2>
+      <h2>${ACTIVE_SITE.charAt(0).toUpperCase() + ACTIVE_SITE.slice(1)} Prompt History</h2>
     </div>
     <ul id="prompt-list"></ul>
   `;
   document.body.appendChild(sidebar);
 
   modal = document.createElement("div");
-  modal.id = "gemini-image-modal";
+  modal.id = "prompt-navigator-image-modal";
   modal.style.display = "none";
   modal.innerHTML = `<span id="modal-close-button">&times;</span><img id="modal-image-content">`;
   document.body.appendChild(modal);
@@ -59,19 +55,25 @@ function createSidebar() {
   });
 
   toggleButton = document.createElement("button");
-  toggleButton.id = "gemini-prompt-nav-toggle";
+  toggleButton.id = "prompt-navigator-toggle";
   toggleButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
   document.body.appendChild(toggleButton);
   toggleButton.addEventListener("click", toggleSidebar);
 
-  chrome.runtime.sendMessage({ action: "getSidebarState", site: ACTIVE_SITE }, (response) => {
-    if (chrome.runtime.lastError) {
-      closeSidebar();
-      return;
+  try {
+    if (ACTIVE_SITE !== Site.GEMINI) {
+        chrome.runtime.sendMessage({ action: "getSidebarState", site: ACTIVE_SITE }, (response) => {
+          if (chrome.runtime.lastError) {
+            closeSidebar();
+            return;
+          }
+          if (response && response.sidebarOpen) openSidebar();
+          else closeSidebar();
+        });
+    } else {
+        closeSidebar();
     }
-    if (response && response.sidebarOpen) openSidebar();
-    else closeSidebar();
-  });
+  } catch(e) { console.warn("Prompt Navigator: Could not get sidebar state on initial load.", e); }
 }
 
 function toggleSidebar() {
@@ -79,7 +81,16 @@ function toggleSidebar() {
   const isOpening = !sidebar.classList.contains("open");
   if (isOpening) openSidebar();
   else closeSidebar();
-  chrome.runtime.sendMessage({ action: "saveSidebarState", isOpen: isOpening, site: ACTIVE_SITE });
+  
+  if (ACTIVE_SITE !== Site.GEMINI) {
+      try {
+          if (chrome.runtime?.id) {
+              chrome.runtime.sendMessage({ action: "saveSidebarState", isOpen: isOpening, site: ACTIVE_SITE });
+          }
+      } catch (error) {
+          console.warn(`Prompt Navigator: Safely caught an error during toggle: ${error.message}`);
+      }
+  }
 }
 
 function openSidebar() {
@@ -96,159 +107,158 @@ function closeSidebar() {
 }
 
 function getPromptElements() {
-  if (ACTIVE_SITE === Site.GEMINI) {
-    return document.querySelectorAll("user-query");
-  }
-  if (ACTIVE_SITE === Site.CHATGPT) {
-    const selectors = [
-      '[data-testid="conversation-turn-user"]',
-      '[data-message-author-role="user"]',
-      'div[role="presentation"] div[data-message-author-role="user"]'
-    ];
-    const list = [];
-    selectors.forEach((sel) => document.querySelectorAll(sel).forEach((el) => list.push(el)));
-    return [...new Set(list)];
-  }
+  if (ACTIVE_SITE === Site.GEMINI) return document.querySelectorAll("user-query");
+  if (ACTIVE_SITE === Site.CHATGPT) return document.querySelectorAll('[data-message-author-role="user"]');
+  if (ACTIVE_SITE === Site.GROK) return document.querySelectorAll('[class*="message-bubble"], .group\\/chip');
   return [];
 }
 
 function extractPromptText(promptEl) {
-  if (ACTIVE_SITE === Site.GEMINI) {
-    const queryTextEl = promptEl.querySelector(".query-content");
-    return queryTextEl ? (queryTextEl.textContent || "").trim() : "";
-  }
-  if (ACTIVE_SITE === Site.CHATGPT) {
-    const preferred =
-      promptEl.querySelector('.text-base, [data-testid="markdown"], .whitespace-pre-wrap') || promptEl;
-    return (preferred.innerText || preferred.textContent || "").trim();
-  }
+  if (ACTIVE_SITE === Site.GEMINI) return (promptEl.querySelector(".query-content")?.textContent || "").trim();
+  
+  if (ACTIVE_SITE === Site.CHATGPT) return (promptEl.querySelector('.whitespace-pre-wrap')?.textContent || "").trim();
+  if (ACTIVE_SITE === Site.GROK) return (promptEl.querySelector("span.whitespace-pre-wrap")?.textContent || "").trim();
   return "";
 }
 
 function findPromptImage(promptEl) {
-  if (ACTIVE_SITE === Site.GEMINI) {
-    return promptEl.querySelector("img:not(.profile-photo):not(.avatar)");
-  }
-  if (ACTIVE_SITE === Site.CHATGPT) {
-    const candidates = promptEl.querySelectorAll("img");
-    for (const img of candidates) {
-      const w = img.naturalWidth || img.width || 0;
-      const h = img.naturalHeight || img.height || 0;
-      const isLikelyAvatar =
-        img.classList.contains("rounded-full") ||
-        img.classList.contains("h-6") ||
-        (w && h && Math.max(w, h) <= 40);
-      if (!isLikelyAvatar) return img;
-    }
-  }
-  return null;
+    if (ACTIVE_SITE === Site.GEMINI) return promptEl.querySelector("img:not(.profile-photo):not(.avatar)");
+    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK) return promptEl.querySelector("img");
+    return null;
 }
 
 function updatePrompts() {
   const promptList = document.getElementById("prompt-list");
   if (!promptList) return;
-  promptList.innerHTML = "";
 
-  const promptElements = getPromptElements();
-  promptElements.forEach((promptEl) => {
-    const promptText = extractPromptText(promptEl);
-    const imageEl = findPromptImage(promptEl);
+  if (ACTIVE_SITE === Site.GEMINI) {
+      promptList.innerHTML = ''; 
+  }
 
-    if (!promptText && !imageEl) return;
-
-    const pid = promptText || imageEl?.src || Math.random();
-    if (!promptDates[pid]) {
-      promptDates[pid] = Date.now();
+  const allElements = Array.from(getPromptElements());
+  let processedPrompts = [];
+  
+  for (let i = 0; i < allElements.length; i++) {
+    const currentEl = allElements[i];
+    const text = extractPromptText(currentEl);
+    const image = findPromptImage(currentEl);
+    
+    if (ACTIVE_SITE === Site.GROK) {
+        const isTextBubble = text && !image;
+        if (isTextBubble && (i + 1 < allElements.length)) {
+            const nextEl = allElements[i+1];
+            const nextImage = findPromptImage(nextEl);
+            const nextText = extractPromptText(nextEl);
+            if (nextImage && !nextText) {
+                processedPrompts.push({ el: currentEl, image: nextImage, text: text, originalIndex: i });
+                i++; 
+                continue;
+            }
+        }
     }
+    processedPrompts.push({ el: currentEl, image, text, originalIndex: i });
+  }
+
+  processedPrompts.forEach((promptData) => {
+    const { el, image, text, originalIndex } = promptData;
+    const promptId = `${ACTIVE_SITE}-prompt-${originalIndex}`;
+    if (document.getElementById(promptId) && ACTIVE_SITE !== Site.GEMINI) return;
+    if (!text && !image) return;
+
+    const dateId = text || image?.src || Math.random();
+    if (!promptDates[dateId]) promptDates[dateId] = Date.now();
 
     const listItem = document.createElement("li");
-    listItem.title = promptText || "Image Prompt";
-
+    listItem.id = promptId;
+    listItem.title = text || "Image Prompt";
+    
     const itemContent = document.createElement("div");
     itemContent.className = "prompt-item-content";
 
     const dateSpan = document.createElement("span");
-    dateSpan.className = "prompt-date"; 
-    dateSpan.textContent = formatDate(promptDates[pid]);
+    dateSpan.className = "prompt-date";
+    dateSpan.textContent = formatDate(promptDates[dateId]);
     itemContent.appendChild(dateSpan);
 
     const textSpan = document.createElement("span");
     textSpan.className = "prompt-text";
-    textSpan.textContent = promptText
-      ? promptText.length > 80
-        ? promptText.substring(0, 80) + "…"
-        : promptText
-      : "Image Upload";
+    textSpan.textContent = text ? (text.length > 80 ? text.substring(0, 80) + "…" : text) : "[Image Prompt]";
     itemContent.appendChild(textSpan);
-
     listItem.appendChild(itemContent);
 
-    if (imageEl) {
-    const imageIndicator = document.createElement("span");
-    imageIndicator.className = "image-indicator";
-    imageIndicator.title = "Click to view image";
-    const iconUrl = chrome.runtime.getURL('icons/image.png'); 
-    imageIndicator.innerHTML = `<img src="${iconUrl}" alt="Image Attached" height="50" width="50">`;    
-    listItem.prepend(imageIndicator);
-    imageIndicator.addEventListener("click", (e) => {
+    if (image) {
+      const imageIndicator = document.createElement("span");
+      imageIndicator.className = "image-indicator";
+      imageIndicator.textContent = "🖼️";
+      imageIndicator.title = "Click to view image";
+      listItem.prepend(imageIndicator);
+      imageIndicator.addEventListener("click", (e) => {
         e.stopPropagation();
-        console.log("Image icon clicked!");
-        const modal = document.getElementById("gemini-image-modal");
         const modalImg = document.getElementById("modal-image-content");
-        console.log("Found modal:", modal);
-        console.log("Found modal image tag:", modalImg);
-        console.log("Source image element:", imageEl);
-        if (modalImg && modal && imageEl) {
-            console.log("Attempting to open image with src:", imageEl.src);
-            modalImg.src = imageEl.src;
-            modal.style.display = "flex";
-            console.log("Modal display style set to 'flex'.");
-        } else {
-            console.error("Could not open image preview. One of the required elements was not found.");
+        if (modalImg && modal) {
+          modalImg.src = image.src;
+          modal.style.display = "flex";
         }
-    });
-}
+      });
+    }
 
     listItem.addEventListener("click", () => {
-      promptEl.scrollIntoView({ behavior: "smooth", block: "center" });
-      promptEl.classList.add("highlight");
-      setTimeout(() => promptEl.classList.remove("highlight"), 2000);
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      
+      const mainEl = allElements[originalIndex];
+      mainEl.classList.add("highlight");
+      
+      if (ACTIVE_SITE === Site.GROK && text && image) {
+          const imageEl = allElements[originalIndex + 1];
+          imageEl?.classList.add("highlight");
+          setTimeout(() => imageEl?.classList.remove("highlight"), 2000);
+      }
+      
+      setTimeout(() => mainEl.classList.remove("highlight"), 2000);
     });
 
     promptList.appendChild(listItem);
   });
 }
 
-const debouncedUpdatePrompts = debounce(updatePrompts, 250);
+const debouncedUpdatePrompts = debounce(updatePrompts, 500);
 
 function pickObserverTarget() {
-  if (ACTIVE_SITE === Site.GEMINI) {
-    return document.querySelector("main") || document.body;
-  }
-  if (ACTIVE_SITE === Site.CHATGPT) {
-    return document.querySelector("#__next") || document.querySelector("main") || document.body;
-  }
+  if (ACTIVE_SITE === Site.GEMINI) return document.querySelector("main") || document.body;
+  if (ACTIVE_SITE === Site.CHATGPT) return document.querySelector("#__next") || document.body;
+  if (ACTIVE_SITE === Site.GROK) return document.querySelector('#leaf-content') || document.body;
   return document.body;
 }
 
 function initializeExtension() {
-  if (document.getElementById("gemini-prompt-nav-sidebar")) return;
+  if (document.getElementById("prompt-navigator-sidebar")) return;
   createSidebar();
 
   let targetNode = pickObserverTarget();
   if (!targetNode) {
-    window.addEventListener("DOMContentLoaded", () => {
-      initializeExtension();
-      debouncedUpdatePrompts();
-    }, { once: true });
+    window.addEventListener("DOMContentLoaded", () => initializeExtension(), { once: true });
     return;
   }
-
+  
   debouncedUpdatePrompts();
   observer = new MutationObserver(() => debouncedUpdatePrompts());
   observer.observe(targetNode, { childList: true, subtree: true });
-
-  setInterval(debouncedUpdatePrompts, 1500);
 }
 
-initializeExtension();
+if (ACTIVE_SITE !== Site.UNKNOWN) {
+    initializeExtension();
+
+    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK) {
+        let currentUrl = location.href;
+        setInterval(() => {
+            if (location.href !== currentUrl) {
+                console.log(`Prompt Navigator: URL changed on ${ACTIVE_SITE}, clearing prompt history.`);
+                currentUrl = location.href;
+                const promptList = document.getElementById("prompt-list");
+                if (promptList) promptList.innerHTML = "";
+                promptDates = {};
+                debouncedUpdatePrompts();
+            }
+        }, 500);
+    }
+}
