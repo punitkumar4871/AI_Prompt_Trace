@@ -72,7 +72,7 @@
     padding: 15px 28px;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.75);
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    /* transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1); */
     position: relative;
     border-left: 3px solid transparent;
     font-weight: 300;
@@ -95,14 +95,14 @@
     color: #ffffff;
     border-left-color: #ff00ff;
     background: linear-gradient(90deg, rgba(255, 0, 255, 0.1) 0%, transparent 100%);
-    transform: translateX(10px);
+    /* transform: translateX(10px); */
     text-shadow: 0 0 8px rgba(255, 0, 255, 0.3);
 }
 
 .image-indicator {
     font-size: 18px;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    /* transition: transform 0.3s ease; */
 }
 .image-indicator:hover { transform: scale(1.2); }
 

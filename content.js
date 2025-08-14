@@ -4,6 +4,7 @@ console.log("Prompt Navigator content script loaded with date-only display.");
 const Site = Object.freeze({
   GEMINI: "gemini",
   CHATGPT: "chatgpt",
+  GROK: "grok",
   UNKNOWN: "unknown",
 });
 
@@ -11,6 +12,7 @@ function detectSite() {
   const h = location.hostname;
   if (h.includes("gemini.google.com")) return Site.GEMINI;
   if (h.includes("chat.openai.com") || h.includes("chatgpt.com")) return Site.CHATGPT;
+  if (h.includes("grok.com") || h.includes("x.ai")) return Site.GROK;
   return Site.UNKNOWN;
 }
 
@@ -40,7 +42,7 @@ function createSidebar() {
   sidebar.id = "gemini-prompt-nav-sidebar";
   sidebar.innerHTML = `
     <div id="sidebar-header">
-      <h2>${ACTIVE_SITE === Site.GEMINI ? "Gemini" : "ChatGPT"} Prompt History</h2>
+      <h2>${ACTIVE_SITE === Site.GEMINI ? "Gemini" : (ACTIVE_SITE === Site.CHATGPT?"ChatGPT":"Grok")} Prompt History</h2>
     </div>
     <ul id="prompt-list"></ul>
   `;
@@ -182,21 +184,30 @@ function updatePrompts() {
     listItem.appendChild(itemContent);
 
     if (imageEl) {
-      const imageIndicator = document.createElement("span");
-      imageIndicator.className = "image-indicator";
-      imageIndicator.textContent = "🖼️";
-      imageIndicator.title = "Click to view image";
-      listItem.prepend(imageIndicator);
-
-      imageIndicator.addEventListener("click", (e) => {
+    const imageIndicator = document.createElement("span");
+    imageIndicator.className = "image-indicator";
+    imageIndicator.title = "Click to view image";
+    const iconUrl = chrome.runtime.getURL('icons/image.png'); 
+    imageIndicator.innerHTML = `<img src="${iconUrl}" alt="Image Attached" height="50" width="50">`;    
+    listItem.prepend(imageIndicator);
+    imageIndicator.addEventListener("click", (e) => {
         e.stopPropagation();
+        console.log("Image icon clicked!");
+        const modal = document.getElementById("gemini-image-modal");
         const modalImg = document.getElementById("modal-image-content");
-        if (modalImg && modal) {
-          modalImg.src = imageEl.src;
-          modal.style.display = "flex";
+        console.log("Found modal:", modal);
+        console.log("Found modal image tag:", modalImg);
+        console.log("Source image element:", imageEl);
+        if (modalImg && modal && imageEl) {
+            console.log("Attempting to open image with src:", imageEl.src);
+            modalImg.src = imageEl.src;
+            modal.style.display = "flex";
+            console.log("Modal display style set to 'flex'.");
+        } else {
+            console.error("Could not open image preview. One of the required elements was not found.");
         }
-      });
-    }
+    });
+}
 
     listItem.addEventListener("click", () => {
       promptEl.scrollIntoView({ behavior: "smooth", block: "center" });
