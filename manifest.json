@@ -27,5 +27,19 @@
   },
   "action": {
     "default_popup": "popup.html"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/image.png"
+      ],
+      "matches": [
+        "https://gemini.google.com/*",
+        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
+        "https://grok.com/*",
+        "https://claude.ai/*"
+      ]
+    }
+  ]
 }

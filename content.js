@@ -180,19 +180,22 @@ function updatePrompts() {
     listItem.title = text || "Image Prompt";
     
     if (image) {
-      const imageIndicator = document.createElement("span");
-      imageIndicator.className = "image-indicator";
-      imageIndicator.textContent = "🖼️";
-      imageIndicator.title = "Click to view image";
-      listItem.appendChild(imageIndicator);
-      imageIndicator.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const modalImg = document.getElementById("modal-image-content");
-        if (modalImg && modal) {
-          modalImg.src = image.src;
-          modal.style.display = "flex";
+        if (chrome.runtime?.id) {
+            const imageIndicator = document.createElement("span");
+            imageIndicator.className = "image-indicator";
+            const iconUrl = chrome.runtime.getURL('icons/image.png');
+            imageIndicator.innerHTML = `<img src="${iconUrl}" alt="Image Attached" height="50" width="50">`;
+            imageIndicator.title = "Click to view image";
+            listItem.appendChild(imageIndicator);
+            imageIndicator.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const modalImg = document.getElementById("modal-image-content");
+                if (modalImg && modal) {
+                    modalImg.src = image.src;
+                    modal.style.display = "flex";
+                }
+            });
         }
-      });
     }
     
     const itemContent = document.createElement("div");
