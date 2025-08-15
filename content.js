@@ -4,6 +4,7 @@ const Site = Object.freeze({
   GEMINI: "gemini",
   CHATGPT: "chatgpt",
   GROK: "grok",
+  CLAUDE: "claude",
   UNKNOWN: "unknown",
 });
 
@@ -12,6 +13,7 @@ function detectSite() {
   if (h.includes("gemini.google.com")) return Site.GEMINI;
   if (h.includes("chat.openai.com") || h.includes("chatgpt.com")) return Site.CHATGPT;
   if (h.includes("grok.com")) return Site.GROK;
+  if (h.includes("claude.ai")) return Site.CLAUDE;
   return Site.UNKNOWN;
 }
 
@@ -61,18 +63,13 @@ function createSidebar() {
   toggleButton.addEventListener("click", toggleSidebar);
 
   try {
-    if (ACTIVE_SITE !== Site.GEMINI) {
-        chrome.runtime.sendMessage({ action: "getSidebarState", site: ACTIVE_SITE }, (response) => {
-          if (chrome.runtime.lastError) {
-            closeSidebar();
-            return;
-          }
-          if (response && response.sidebarOpen) openSidebar();
-          else closeSidebar();
-        });
-    } else {
-        closeSidebar();
-    }
+    chrome.runtime.sendMessage({ action: "getSidebarState", site: ACTIVE_SITE }, (response) => {
+      if (chrome.runtime.lastError) {
+        closeSidebar(); return;
+      }
+      if (response && response.sidebarOpen) openSidebar();
+      else closeSidebar();
+    });
   } catch(e) { console.warn("Prompt Navigator: Could not get sidebar state on initial load.", e); }
 }
 
@@ -82,14 +79,12 @@ function toggleSidebar() {
   if (isOpening) openSidebar();
   else closeSidebar();
   
-  if (ACTIVE_SITE !== Site.GEMINI) {
-      try {
-          if (chrome.runtime?.id) {
-              chrome.runtime.sendMessage({ action: "saveSidebarState", isOpen: isOpening, site: ACTIVE_SITE });
-          }
-      } catch (error) {
-          console.warn(`Prompt Navigator: Safely caught an error during toggle: ${error.message}`);
-      }
+  try {
+    if (chrome.runtime?.id) {
+      chrome.runtime.sendMessage({ action: "saveSidebarState", isOpen: isOpening, site: ACTIVE_SITE });
+    }
+  } catch (error) {
+    console.warn(`Prompt Navigator: Safely caught an error during toggle: ${error.message}`);
   }
 }
 
@@ -99,6 +94,7 @@ function openSidebar() {
   document.body.classList.add("sidebar-open");
   toggleButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`;
 }
+
 function closeSidebar() {
   if (!sidebar || !toggleButton) return;
   sidebar.classList.remove("open");
@@ -106,65 +102,76 @@ function closeSidebar() {
   toggleButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
 }
 
+// ---------- Site-Specific Logic ----------
 function getPromptElements() {
-  if (ACTIVE_SITE === Site.GEMINI) return document.querySelectorAll("user-query");
-  if (ACTIVE_SITE === Site.CHATGPT) return document.querySelectorAll('[data-message-author-role="user"]');
-  if (ACTIVE_SITE === Site.GROK) return document.querySelectorAll('[class*="message-bubble"], .group\\/chip');
-  return [];
+  switch (ACTIVE_SITE) {
+    case Site.GEMINI: return document.querySelectorAll("user-query");
+    case Site.CHATGPT: return document.querySelectorAll('[data-message-author-role="user"]');
+    case Site.GROK: return document.querySelectorAll('[class*="message-bubble"], .group\\/chip');
+    case Site.CLAUDE: return document.querySelectorAll('div[data-testid="user-message"]');
+    default: return [];
+  }
 }
 
 function extractPromptText(promptEl) {
-  if (ACTIVE_SITE === Site.GEMINI) return (promptEl.querySelector(".query-content")?.textContent || "").trim();
-  
-  if (ACTIVE_SITE === Site.CHATGPT) return (promptEl.querySelector('.whitespace-pre-wrap')?.textContent || "").trim();
-  if (ACTIVE_SITE === Site.GROK) return (promptEl.querySelector("span.whitespace-pre-wrap")?.textContent || "").trim();
-  return "";
+  switch (ACTIVE_SITE) {
+    case Site.GEMINI: return (promptEl.querySelector(".query-content")?.textContent || "").trim();
+    case Site.CHATGPT: return (promptEl.querySelector('.whitespace-pre-wrap')?.textContent || "").trim();
+    case Site.GROK: return (promptEl.querySelector("span.whitespace-pre-wrap")?.textContent || "").trim();
+    case Site.CLAUDE: return (promptEl.querySelector('p.whitespace-pre-wrap')?.textContent || "").trim();
+    default: return "";
+  }
 }
 
 function findPromptImage(promptEl) {
-    if (ACTIVE_SITE === Site.GEMINI) return promptEl.querySelector("img:not(.profile-photo):not(.avatar)");
-    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK) return promptEl.querySelector("img");
-    return null;
+  switch (ACTIVE_SITE) {
+    case Site.GEMINI: return promptEl.querySelector("img:not(.profile-photo):not(.avatar)");
+    case Site.CHATGPT:
+    case Site.GROK: return promptEl.querySelector("img");
+    case Site.CLAUDE: {
+        const textBubble = promptEl.closest('.group.relative');
+        const imageContainer = textBubble?.previousElementSibling;
+        return imageContainer?.querySelector('img[src^="/api/"]');
+    }
+    default: return null;
+  }
 }
 
 function updatePrompts() {
   const promptList = document.getElementById("prompt-list");
   if (!promptList) return;
 
-  if (ACTIVE_SITE === Site.GEMINI) {
-      promptList.innerHTML = ''; 
-  }
-
+  promptList.innerHTML = ''; 
   const allElements = Array.from(getPromptElements());
-  let processedPrompts = [];
-  
+
   for (let i = 0; i < allElements.length; i++) {
-    const currentEl = allElements[i];
-    const text = extractPromptText(currentEl);
-    const image = findPromptImage(currentEl);
-    
-    if (ACTIVE_SITE === Site.GROK) {
-        const isTextBubble = text && !image;
-        if (isTextBubble && (i + 1 < allElements.length)) {
-            const nextEl = allElements[i+1];
-            const nextImage = findPromptImage(nextEl);
-            const nextText = extractPromptText(nextEl);
-            if (nextImage && !nextText) {
-                processedPrompts.push({ el: currentEl, image: nextImage, text: text, originalIndex: i });
-                i++; 
-                continue;
-            }
+    const promptEl = allElements[i];
+    let text = extractPromptText(promptEl);
+    let image = findPromptImage(promptEl);
+    let elementsToHighlight = [promptEl];
+
+    if (ACTIVE_SITE === Site.GROK && text && !image && (i + 1 < allElements.length)) {
+        const nextEl = allElements[i+1];
+        const nextImage = findPromptImage(nextEl);
+        if (nextImage && !extractPromptText(nextEl)) {
+            image = nextImage;
+            elementsToHighlight.push(nextEl);
+            i++; 
         }
     }
-    processedPrompts.push({ el: currentEl, image, text, originalIndex: i });
-  }
+    
+    if (ACTIVE_SITE === Site.CLAUDE) {
+        const mainElement = promptEl.closest('.group.relative');
+        elementsToHighlight = [mainElement];
+        if (image) {
+            const imageElement = image.closest('.group\\/thumbnail');
+            if (imageElement) elementsToHighlight.push(imageElement);
+        }
+    }
 
-  processedPrompts.forEach((promptData) => {
-    const { el, image, text, originalIndex } = promptData;
-    const promptId = `${ACTIVE_SITE}-prompt-${originalIndex}`;
-    if (document.getElementById(promptId) && ACTIVE_SITE !== Site.GEMINI) return;
-    if (!text && !image) return;
+    if (!text && !image) continue;
 
+    const promptId = `${ACTIVE_SITE}-prompt-${i}`;
     const dateId = text || image?.src || Math.random();
     if (!promptDates[dateId]) promptDates[dateId] = Date.now();
 
@@ -172,26 +179,12 @@ function updatePrompts() {
     listItem.id = promptId;
     listItem.title = text || "Image Prompt";
     
-    const itemContent = document.createElement("div");
-    itemContent.className = "prompt-item-content";
-
-    const dateSpan = document.createElement("span");
-    dateSpan.className = "prompt-date";
-    dateSpan.textContent = formatDate(promptDates[dateId]);
-    itemContent.appendChild(dateSpan);
-
-    const textSpan = document.createElement("span");
-    textSpan.className = "prompt-text";
-    textSpan.textContent = text ? (text.length > 80 ? text.substring(0, 80) + "…" : text) : "[Image Prompt]";
-    itemContent.appendChild(textSpan);
-    listItem.appendChild(itemContent);
-
     if (image) {
       const imageIndicator = document.createElement("span");
       imageIndicator.className = "image-indicator";
       imageIndicator.textContent = "🖼️";
       imageIndicator.title = "Click to view image";
-      listItem.prepend(imageIndicator);
+      listItem.appendChild(imageIndicator);
       imageIndicator.addEventListener("click", (e) => {
         e.stopPropagation();
         const modalImg = document.getElementById("modal-image-content");
@@ -201,33 +194,40 @@ function updatePrompts() {
         }
       });
     }
+    
+    const itemContent = document.createElement("div");
+    itemContent.className = "prompt-item-content";
+    const dateSpan = document.createElement("span");
+    dateSpan.className = "prompt-date";
+    dateSpan.textContent = formatDate(promptDates[dateId]);
+    itemContent.appendChild(dateSpan);
+    const textSpan = document.createElement("span");
+    textSpan.className = "prompt-text";
+    textSpan.textContent = text ? (text.length > 80 ? text.substring(0, 80) + "…" : text) : "[Image Prompt]";
+    itemContent.appendChild(textSpan);
+    listItem.appendChild(itemContent);
 
     listItem.addEventListener("click", () => {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      
-      const mainEl = allElements[originalIndex];
-      mainEl.classList.add("highlight");
-      
-      if (ACTIVE_SITE === Site.GROK && text && image) {
-          const imageEl = allElements[originalIndex + 1];
-          imageEl?.classList.add("highlight");
-          setTimeout(() => imageEl?.classList.remove("highlight"), 2000);
-      }
-      
-      setTimeout(() => mainEl.classList.remove("highlight"), 2000);
+      const firstEl = elementsToHighlight[0];
+      firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      elementsToHighlight.forEach(el => el?.classList.add("highlight"));
+      setTimeout(() => elementsToHighlight.forEach(el => el?.classList.remove("highlight")), 2500);
     });
 
     promptList.appendChild(listItem);
-  });
+  }
 }
 
 const debouncedUpdatePrompts = debounce(updatePrompts, 500);
 
 function pickObserverTarget() {
-  if (ACTIVE_SITE === Site.GEMINI) return document.querySelector("main") || document.body;
-  if (ACTIVE_SITE === Site.CHATGPT) return document.querySelector("#__next") || document.body;
-  if (ACTIVE_SITE === Site.GROK) return document.querySelector('#leaf-content') || document.body;
-  return document.body;
+  switch (ACTIVE_SITE) {
+    case Site.GEMINI: return document.querySelector("main") || document.body;
+    case Site.CHATGPT: return document.querySelector("#__next") || document.body;
+    case Site.GROK: return document.querySelector('#leaf-content') || document.body;
+    case Site.CLAUDE: return document.querySelector("main") || document.body;
+    default: return document.body;
+  }
 }
 
 function initializeExtension() {
@@ -236,19 +236,19 @@ function initializeExtension() {
 
   let targetNode = pickObserverTarget();
   if (!targetNode) {
-    window.addEventListener("DOMContentLoaded", () => initializeExtension(), { once: true });
+    window.addEventListener("load", initializeExtension, { once: true });
     return;
   }
   
   debouncedUpdatePrompts();
-  observer = new MutationObserver(() => debouncedUpdatePrompts());
+  const observer = new MutationObserver(() => debouncedUpdatePrompts());
   observer.observe(targetNode, { childList: true, subtree: true });
 }
 
 if (ACTIVE_SITE !== Site.UNKNOWN) {
     initializeExtension();
 
-    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK) {
+    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK || ACTIVE_SITE === Site.CLAUDE) {
         let currentUrl = location.href;
         setInterval(() => {
             if (location.href !== currentUrl) {

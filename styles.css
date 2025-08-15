@@ -46,27 +46,29 @@
     padding: 10px 0;
     margin: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     flex-grow: 1;
 }
 #prompt-list::-webkit-scrollbar { display: none; }
+
+/* NEW, flicker-free styling for all sites */
 #prompt-list li {
     padding: 15px 28px;
     cursor: pointer;
-    color: rgba(255, 255, 255, 0.75);
-    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    position: relative;
     border-left: 3px solid transparent;
+    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     display: flex;
     align-items: center;
     gap: 15px;
+    color: rgba(255, 255, 255, 0.75);
 }
+
 #prompt-list li:hover {
-    color: #ffffff;
     border-left-color: #ff00ff;
     background: linear-gradient(90deg, rgba(255, 0, 255, 0.1) 0%, transparent 100%);
-    transform: translateX(10px);
-    text-shadow: 0 0 8px rgba(255, 0, 255, 0.3);
+    color: #ffffff;
 }
+
 .prompt-item-content {
     display: flex;
     flex-direction: column;
