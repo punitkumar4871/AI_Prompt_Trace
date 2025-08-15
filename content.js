@@ -5,6 +5,7 @@ const Site = Object.freeze({
   CHATGPT: "chatgpt",
   GROK: "grok",
   CLAUDE: "claude",
+  DEEPSEEK: "deepseek",
   UNKNOWN: "unknown",
 });
 
@@ -14,12 +15,18 @@ function detectSite() {
   if (h.includes("chat.openai.com") || h.includes("chatgpt.com")) return Site.CHATGPT;
   if (h.includes("grok.com")) return Site.GROK;
   if (h.includes("claude.ai")) return Site.CLAUDE;
+  if (h.includes("chat.deepseek.com")) return Site.DEEPSEEK;
   return Site.UNKNOWN;
 }
 
 const ACTIVE_SITE = detectSite();
 let sidebar, toggleButton, observer, debounceTimer, modal;
 let promptDates = {};
+
+// Self-contained image data for the toggle button icons to prevent SVG errors
+const ICON_CLOSE = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDE4bC02LTYgNi02Ii8+PC9zdmc+';
+const ICON_OPEN = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNCIgaGVpZ2h0PSIxNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTkgMThsNi02LTYtNiIvPjwvc3ZnPg==';
+
 
 function debounce(func, delay) {
   return function (...args) {
@@ -58,7 +65,7 @@ function createSidebar() {
 
   toggleButton = document.createElement("button");
   toggleButton.id = "prompt-navigator-toggle";
-  toggleButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
+  toggleButton.innerHTML = `<img src="${ICON_CLOSE}" />`;
   document.body.appendChild(toggleButton);
   toggleButton.addEventListener("click", toggleSidebar);
 
@@ -92,14 +99,14 @@ function openSidebar() {
   if (!sidebar || !toggleButton) return;
   sidebar.classList.add("open");
   document.body.classList.add("sidebar-open");
-  toggleButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>`;
+  toggleButton.innerHTML = `<img src="${ICON_OPEN}" />`;
 }
 
 function closeSidebar() {
   if (!sidebar || !toggleButton) return;
   sidebar.classList.remove("open");
   document.body.classList.remove("sidebar-open");
-  toggleButton.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>`;
+  toggleButton.innerHTML = `<img src="${ICON_CLOSE}" />`;
 }
 
 // ---------- Site-Specific Logic ----------
@@ -109,6 +116,11 @@ function getPromptElements() {
     case Site.CHATGPT: return document.querySelectorAll('[data-message-author-role="user"]');
     case Site.GROK: return document.querySelectorAll('[class*="message-bubble"], .group\\/chip');
     case Site.CLAUDE: return document.querySelectorAll('div[data-testid="user-message"]');
+    case Site.DEEPSEEK: {
+        const contentElements = document.querySelectorAll('div[class^="fbb737a4"], div[class^="_76cd190"]');
+        const parentElements = Array.from(contentElements).map(el => el.parentElement);
+        return [...new Set(parentElements)];
+    }
     default: return [];
   }
 }
@@ -119,6 +131,12 @@ function extractPromptText(promptEl) {
     case Site.CHATGPT: return (promptEl.querySelector('.whitespace-pre-wrap')?.textContent || "").trim();
     case Site.GROK: return (promptEl.querySelector("span.whitespace-pre-wrap")?.textContent || "").trim();
     case Site.CLAUDE: return (promptEl.querySelector('p.whitespace-pre-wrap')?.textContent || "").trim();
+    case Site.DEEPSEEK: {
+      const textContent = (promptEl.querySelector('div[class^="fbb737a4"]')?.textContent || "").trim();
+      const imageFilename = (promptEl.querySelector('div[class*="f3a54b52"]')?.textContent || "").trim();
+      if (textContent && imageFilename) return `${textContent} [Image: ${imageFilename}]`;
+      return textContent;
+    }
     default: return "";
   }
 }
@@ -133,6 +151,7 @@ function findPromptImage(promptEl) {
         const imageContainer = textBubble?.previousElementSibling;
         return imageContainer?.querySelector('img[src^="/api/"]');
     }
+    case Site.DEEPSEEK: return promptEl.querySelector('div[class*="_76cd190"]');
     default: return null;
   }
 }
@@ -150,6 +169,7 @@ function updatePrompts() {
     let image = findPromptImage(promptEl);
     let elementsToHighlight = [promptEl];
 
+    // Site-specific logic for handling prompt/image grouping
     if (ACTIVE_SITE === Site.GROK && text && !image && (i + 1 < allElements.length)) {
         const nextEl = allElements[i+1];
         const nextImage = findPromptImage(nextEl);
@@ -168,8 +188,24 @@ function updatePrompts() {
             if (imageElement) elementsToHighlight.push(imageElement);
         }
     }
+      
+    if (ACTIVE_SITE === Site.DEEPSEEK) {
+        const hasText = promptEl.querySelector('div[class^="fbb737a4"]');
+        const hasImage = promptEl.querySelector('div[class^="_76cd190"]');
+        if (hasImage && !hasText) {
+            const nextEl = allElements[i + 1];
+            if (nextEl && nextEl.querySelector('div[class^="fbb737a4"]')) {
+                continue; // Skip duplicate image-only part of a prompt
+            }
+        }
+    }
 
     if (!text && !image) continue;
+
+    if (!text && image && ACTIVE_SITE === Site.DEEPSEEK) {
+      const imageFilename = (promptEl.querySelector('div[class*="f3a54b52"]')?.textContent || "Image").trim();
+      text = `[Image: ${imageFilename}]`;
+    }
 
     const promptId = `${ACTIVE_SITE}-prompt-${i}`;
     const dateId = text || image?.src || Math.random();
@@ -185,16 +221,50 @@ function updatePrompts() {
             imageIndicator.className = "image-indicator";
             const iconUrl = chrome.runtime.getURL('icons/image.png');
             imageIndicator.innerHTML = `<img src="${iconUrl}" alt="Image Attached" height="50" width="50">`;
-            imageIndicator.title = "Click to view image";
             listItem.appendChild(imageIndicator);
-            imageIndicator.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const modalImg = document.getElementById("modal-image-content");
-                if (modalImg && modal) {
-                    modalImg.src = image.src;
-                    modal.style.display = "flex";
-                }
-            });
+            
+            imageIndicator.title = "Click to view image";
+
+            if (ACTIVE_SITE === Site.DEEPSEEK) {
+                // Special handler for DeepSeek's dynamic image loading
+                imageIndicator.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const placeholder = promptEl.querySelector('div[class*="_76cd190"]');
+                    if (placeholder) {
+                        placeholder.click();
+                        setTimeout(() => {
+                            const viewerImage = document.querySelector('img[src*="deepseek-api-files"]');
+                            if (viewerImage && viewerImage.src) {
+                                const modalImg = document.getElementById("modal-image-content");
+                                modalImg.src = viewerImage.src;
+                                modal.style.display = "flex";
+
+                                let container = viewerImage.parentElement;
+                                for (let i = 0; i < 5 && container; i++) {
+                                    const closeButton = container.querySelector('div.ds-icon-button');
+                                    if (closeButton) {
+                                        closeButton.click();
+                                        break; 
+                                    }
+                                    container = container.parentElement;
+                                }
+                            } else {
+                                alert("Prompt Navigator could not find the image viewer. The site's code may have changed.");
+                            }
+                        }, 500);
+                    }
+                });
+            } else {
+                // Standard handler for all other sites
+                imageIndicator.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const modalImg = document.getElementById("modal-image-content");
+                    if (modalImg && modal && image.src) {
+                        modalImg.src = image.src;
+                        modal.style.display = "flex";
+                    }
+                });
+            }
         }
     }
     
@@ -212,7 +282,8 @@ function updatePrompts() {
 
     listItem.addEventListener("click", () => {
       const firstEl = elementsToHighlight[0];
-      firstEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      // FIX: Changed block from "center" to "start" to scroll to the top of the prompt.
+      firstEl.scrollIntoView({ behavior: "smooth", block: "start" });
       elementsToHighlight.forEach(el => el?.classList.add("highlight"));
       setTimeout(() => elementsToHighlight.forEach(el => el?.classList.remove("highlight")), 2500);
     });
@@ -229,6 +300,7 @@ function pickObserverTarget() {
     case Site.CHATGPT: return document.querySelector("#__next") || document.body;
     case Site.GROK: return document.querySelector('#leaf-content') || document.body;
     case Site.CLAUDE: return document.querySelector("main") || document.body;
+    case Site.DEEPSEEK: return document.querySelector('div[class*="--chat-container--"], div[class*="--chat-list--"]') || document.body;
     default: return document.body;
   }
 }
@@ -249,9 +321,13 @@ function initializeExtension() {
 }
 
 if (ACTIVE_SITE !== Site.UNKNOWN) {
-    initializeExtension();
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        initializeExtension();
+    } else {
+        window.addEventListener("load", initializeExtension);
+    }
 
-    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK || ACTIVE_SITE === Site.CLAUDE) {
+    if (ACTIVE_SITE === Site.CHATGPT || ACTIVE_SITE === Site.GROK || ACTIVE_SITE === Site.CLAUDE || ACTIVE_SITE === Site.DEEPSEEK) {
         let currentUrl = location.href;
         setInterval(() => {
             if (location.href !== currentUrl) {

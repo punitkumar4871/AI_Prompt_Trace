@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Prompt Navigator (All-in-One)",
-  "version": "5.0",
-  "description": "Adds a sidebar to Gemini, ChatGPT, Grok, and Claude to easily navigate through your prompts.",
+  "version": "5.1",
+  "description": "Adds a sidebar to Gemini, ChatGPT, Grok, Claude, and DeepSeek to easily navigate through your prompts.",
   "permissions": ["storage"],
   "background": {
     "service_worker": "background.js"
@@ -14,7 +14,8 @@
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
         "https://grok.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "https://chat.deepseek.com/*"
       ],
       "js": ["content.js"],
       "css": ["styles.css"]
@@ -38,7 +39,8 @@
         "https://chat.openai.com/*",
         "https://chatgpt.com/*",
         "https://grok.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "https://chat.deepseek.com/*"
       ]
     }
   ]
